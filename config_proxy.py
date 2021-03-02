@@ -73,59 +73,52 @@ class ConfigProxy:
         cls.current_config = None
         return cls.get_config()
 
+    class ConfigProperty:
+        path: Optional[str]
+        env: Optional[str]
+        default: Optional[Any] = None
 
-class ConfigProperty:
-    path: Optional[str]
-    env: Optional[str]
-    default: Optional[Any] = None
+        def __init__(self, path: Optional[str] = None, env: Optional[str] = None, default: Optional[Any] = None):
+            self.path = path
+            self.env = env
+            self.default = default
 
-    def __init__(self, path: Optional[str] = None, env: Optional[str] = None, default: Optional[Any] = None):
-        self.path = path
-        self.env = env
-        self.default = default
+        def get_value(self) -> Any:
+            if self.env and (value := os.getenv(self.env, None)):
+                return value
+            config = ConfigProxy.get_config()
+            if self.path and (value := config.get_value(self.path)):
+                return value
+            if self.default is not None:
+                return self.default
+            return None
 
-    def get_value(self) -> Any:
-        if self.env and (value := os.getenv(self.env, None)):
-            return value
-        config = ConfigProxy.get_config()
-        if self.path and (value := config.get_value(self.path)):
-            return value
-        if self.default is not None:
-            return self.default
-        return None
+    class StringProperty(ConfigProperty):
+        @property
+        def value(self) -> Optional[str]:
+            return self.get_value()
 
+    class IntProperty(ConfigProperty):
+        @property
+        def value(self) -> Optional[int]:
+            return self.get_value()
 
-class StringProperty(ConfigProperty):
-    @property
-    def value(self) -> Optional[str]:
-        return self.get_value()
+    class ListOfIntsProperty(ConfigProperty):
+        @property
+        def value(self) -> List[int]:
+            return self.get_value()
 
+    class ListOfStringsProperty(ConfigProperty):
+        @property
+        def value(self) -> List[str]:
+            return self.get_value()
 
-class IntProperty(ConfigProperty):
-    @property
-    def value(self) -> Optional[int]:
-        return self.get_value()
+    class ListOfObjectsProperty(ConfigProperty):
+        @property
+        def value(self) -> List[Dict]:
+            return self.get_value()
 
-
-class ListOfIntsProperty(ConfigProperty):
-    @property
-    def value(self) -> List[int]:
-        return self.get_value()
-
-
-class ListOfStringsProperty(ConfigProperty):
-    @property
-    def value(self) -> List[str]:
-        return self.get_value()
-
-
-class ListOfObjectsProperty(ConfigProperty):
-    @property
-    def value(self) -> List[Dict]:
-        return self.get_value()
-
-
-class ListOfListsProperty(ConfigProperty):
-    @property
-    def value(self) -> List[List]:
-        return self.get_value()
+    class ListOfListsProperty(ConfigProperty):
+        @property
+        def value(self) -> List[List]:
+            return self.get_value()
