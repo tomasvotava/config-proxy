@@ -4,6 +4,11 @@ version = "0.1.1"
 description = "Configuration proxy that enables specifying both source json path and / or environmental variable in order to get configuration value"
 authors = ["Tomas Votava <info@tomasvotava.eu>"]
 readme = "README.md"
+repository = "https://github.com/tomasvotava/config-proxy"
+homepage = "https://github.com/tomasvotava/config-proxy"
+documentation = "https://github.com/tomasvotava/config-proxy"
+keywords = ["configuration", "env", "json", "jsonpath"]
+
 
 [tool.black]
 line-length = 119
