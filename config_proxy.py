@@ -13,11 +13,48 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigProxy:
+    """Proxy to your configuration. It loads json file,
+    checks it against json schema (if found) and provides
+    an easy way of accessing json keys using JSON path.
+
+    If you need to change any of the class' settings,
+    you should create a subclass.
+
+    E.g. here we change environmental variable that contains
+    our config file path to `PATH_TO_CONFIG` and default name
+    of the configuration file to `settings.json`:
+
+    ```python
+    from config_proxy import ConfigProxy as _ConfigProxy
+
+    class ConfigProxy(_ConfigProxy):
+        env_location = "PATH_TO_CONFIG
+        config_file_names = ["settings.json"]
+    ```
+
+    If you create a subclass, do not forget to actually pass
+    it to all of your properties:
+
+    ```python
+    property = StringProperty(..., proxy=MyConfigProxySubclass)
+    ```
+    """
+
     env_location: str = "CONFIG_PATH"
     config_file_names: List[str] = ["config.json"]
     current_config: Optional["ConfigProxy"] = None
 
     def __init__(self, config_path: str):
+        """Class constructor. You are not supposed to actually create
+        an instance of this class, instead you should use *Property classes
+        or use `get_config` static method.
+
+        Arguments:
+            config_path {str} -- An actual path to json configuration file
+
+        Raises:
+            FileNotFoundError: Specified configuration file was not found.
+        """
         self.config_path = config_path
         if not os.path.exists(self.config_path):
             raise FileNotFoundError(f"Configuration file not found in {self.config_path}")
@@ -34,6 +71,11 @@ class ConfigProxy:
         jsonschema.validate(self.config, self.schema)
 
     def get_value(self, path: str) -> Any:
+        """Return value from json config file using JSON path.
+
+        Arguments:
+            path {str} -- A JSON path valid string.
+        """
         expr = jsonpath(path).find(self.config)
         if not expr:
             return None
@@ -67,6 +109,10 @@ class ConfigProxy:
 
     @classmethod
     def get_config(cls) -> "ConfigProxy":
+        """Creates an instance of `ConfigProxy`, while actually searching for
+        the correct config file. If this method already was called, existing
+        configuration is returned.
+        """
         if cls.current_config:
             return cls.current_config
         config_path = cls.get_config_path()
@@ -75,11 +121,50 @@ class ConfigProxy:
 
     @classmethod
     def reload(cls) -> "ConfigProxy":
+        """Same as `get_config` but ensures that the configuration file is
+        read again if it already was opened before.
+        """
         cls.current_config = None
         return cls.get_config()
 
 
 class ConfigProperty:
+    """A base class for access properties of the configuration
+    file (and / or environmental variables).
+
+    Various subclasses are provided in order to make the most use of
+    Python's typehinting and making your IDE actually autocomplete
+    your config values' types. If you do not need this functionality,
+    you are free to use this base class instead of actual subclasses.
+
+    Example:
+
+
+    ### Config file
+
+    ```json
+    {
+        "database": {
+            "host": "mydb.host.com",
+            "port": 1234
+        }
+    }
+    ```
+
+    ### Python file
+
+    ```python
+    from config_proxy import ConfigProperty, StringProperty, IntProperty
+
+    # Here we get autocomplete because we know the result will be `str` and `int` respectively:
+    host = StringProperty("database.host", "DB_HOST", "localhost")
+    port = IntProperty("database.port", "DB_PORT", 5432)
+
+    # Here we have no autocomplete because we used base class instead of typed subclasses:
+    password = ConfigProperty("database.password", "DB_PASSWORD")
+    ```
+    """
+
     path: Optional[str]
     env: Optional[str]
     default: Optional[Any] = None
@@ -108,36 +193,48 @@ class ConfigProperty:
 
 
 class StringProperty(ConfigProperty):
+    """See `ConfigProperty` for more."""
+
     @property
     def value(self) -> Optional[str]:
         return self.get_value()
 
 
 class IntProperty(ConfigProperty):
+    """See `ConfigProperty` for more."""
+
     @property
     def value(self) -> Optional[int]:
         return self.get_value()
 
 
 class ListOfIntsProperty(ConfigProperty):
+    """See `ConfigProperty` for more."""
+
     @property
     def value(self) -> List[int]:
         return self.get_value()
 
 
 class ListOfStringsProperty(ConfigProperty):
+    """See `ConfigProperty` for more."""
+
     @property
     def value(self) -> List[str]:
         return self.get_value()
 
 
 class ListOfObjectsProperty(ConfigProperty):
+    """See `ConfigProperty` for more."""
+
     @property
     def value(self) -> List[Dict]:
         return self.get_value()
 
 
 class ListOfListsProperty(ConfigProperty):
+    """See `ConfigProperty` for more."""
+
     @property
     def value(self) -> List[List]:
         return self.get_value()
