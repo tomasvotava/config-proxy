@@ -3,7 +3,7 @@ name = "config-proxy"
 version = "0.1.1"
 description = "Configuration proxy that enables specifying both source json path and / or environmental variable in order to get configuration value"
 authors = ["Tomas Votava <info@tomasvotava.eu>"]
-readme = README.md
+readme = "README.md"
 
 [tool.black]
 line-length = 119
