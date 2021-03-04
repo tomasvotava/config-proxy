@@ -28,7 +28,7 @@ class ConfigProxy:
     from config_proxy import ConfigProxy as _ConfigProxy
 
     class ConfigProxy(_ConfigProxy):
-        env_location = "PATH_TO_CONFIG
+        env_location = "PATH_TO_CONFIG"
         config_file_names = ["settings.json"]
     ```
 
@@ -87,8 +87,10 @@ class ConfigProxy:
     @classmethod
     def get_config_path(cls) -> str:
         """Config files are sought in following order:
-        1. {env_location} environmental variable specifying path to config file
-        2. {config_file_names} in current working directory
+        
+        1. `env_location` environmental variable specifying path to config file
+        
+        2. `config_file_names` in current working directory
         """
         if (config_path := os.getenv(cls.env_location, None)) :
             logger.info("Using config file from env %s=%s", cls.env_location, config_path)
