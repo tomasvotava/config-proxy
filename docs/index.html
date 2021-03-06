@@ -99,7 +99,7 @@ class ConfigProxy:
             self.schema = json.load(fid)
         jsonschema.validate(self.config, self.schema)
 
-    def get_value(self, path: str) -&gt; Any:
+    def get_value(self, path: str, use_list: Optional[bool] = None) -&gt; Any:
         &#34;&#34;&#34;Return value from json config file using JSON path.
 
         Arguments:
@@ -107,7 +107,12 @@ class ConfigProxy:
         &#34;&#34;&#34;
         expr = jsonpath(path).find(self.config)
         if not expr:
-            return None
+            return [] if use_list else None
+        if use_list:
+            return [e.value for e in expr]
+        elif use_list == False:
+            return expr[0].value
+        # Guess whether to return list or not by default
         if len(expr) == 1:
             return expr[0].value
         else:
@@ -116,9 +121,9 @@ class ConfigProxy:
     @classmethod
     def get_config_path(cls) -&gt; str:
         &#34;&#34;&#34;Config files are sought in following order:
-        
+
         1. `env_location` environmental variable specifying path to config file
-        
+
         2. `config_file_names` in current working directory
         &#34;&#34;&#34;
         if (config_path := os.getenv(cls.env_location, None)) :
@@ -212,11 +217,11 @@ class ConfigProperty:
         self.default = default
         self.ProxyType = proxy
 
-    def get_value(self) -&gt; Any:
+    def get_value(self, use_list: Optional[bool] = None) -&gt; Any:
         if self.env and (value := os.getenv(self.env, None)):
             return value
         config = self.ProxyType.get_config()
-        if self.path and (value := config.get_value(self.path)):
+        if self.path and (value := config.get_value(self.path, use_list=use_list)):
             return value
         if self.default is not None:
             return self.default
@@ -228,7 +233,7 @@ class StringProperty(ConfigProperty):
 
     @property
     def value(self) -&gt; Optional[str]:
-        return self.get_value()
+        return self.get_value(use_list=False)
 
 
 class IntProperty(ConfigProperty):
@@ -236,7 +241,7 @@ class IntProperty(ConfigProperty):
 
     @property
     def value(self) -&gt; Optional[int]:
-        return self.get_value()
+        return self.get_value(use_list=False)
 
 
 class ListOfIntsProperty(ConfigProperty):
@@ -244,7 +249,7 @@ class ListOfIntsProperty(ConfigProperty):
 
     @property
     def value(self) -&gt; List[int]:
-        return self.get_value()
+        return self.get_value(use_list=True)
 
 
 class ListOfStringsProperty(ConfigProperty):
@@ -252,7 +257,7 @@ class ListOfStringsProperty(ConfigProperty):
 
     @property
     def value(self) -&gt; List[str]:
-        return self.get_value()
+        return self.get_value(use_list=True)
 
 
 class ListOfObjectsProperty(ConfigProperty):
@@ -260,7 +265,7 @@ class ListOfObjectsProperty(ConfigProperty):
 
     @property
     def value(self) -&gt; List[Dict]:
-        return self.get_value()
+        return self.get_value(use_list=True)
 
 
 class ListOfListsProperty(ConfigProperty):
@@ -268,7 +273,7 @@ class ListOfListsProperty(ConfigProperty):
 
     @property
     def value(self) -&gt; List[List]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=True)</code></pre>
 </details>
 </section>
 <section>
@@ -367,11 +372,11 @@ password = ConfigProperty(&quot;database.password&quot;, &quot;DB_PASSWORD&quot;
         self.default = default
         self.ProxyType = proxy
 
-    def get_value(self) -&gt; Any:
+    def get_value(self, use_list: Optional[bool] = None) -&gt; Any:
         if self.env and (value := os.getenv(self.env, None)):
             return value
         config = self.ProxyType.get_config()
-        if self.path and (value := config.get_value(self.path)):
+        if self.path and (value := config.get_value(self.path, use_list=use_list)):
             return value
         if self.default is not None:
             return self.default
@@ -404,7 +409,7 @@ password = ConfigProperty(&quot;database.password&quot;, &quot;DB_PASSWORD&quot;
 <h3>Methods</h3>
 <dl>
 <dt id="config_proxy.ConfigProperty.get_value"><code class="name flex">
-<span>def <span class="ident">get_value</span></span>(<span>self) ‑> Any</span>
+<span>def <span class="ident">get_value</span></span>(<span>self, use_list: Optional[bool] = None) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -412,11 +417,11 @@ password = ConfigProperty(&quot;database.password&quot;, &quot;DB_PASSWORD&quot;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_value(self) -&gt; Any:
+<pre><code class="python">def get_value(self, use_list: Optional[bool] = None) -&gt; Any:
     if self.env and (value := os.getenv(self.env, None)):
         return value
     config = self.ProxyType.get_config()
-    if self.path and (value := config.get_value(self.path)):
+    if self.path and (value := config.get_value(self.path, use_list=use_list)):
         return value
     if self.default is not None:
         return self.default
@@ -520,7 +525,7 @@ or use <code>get_config</code> static method.</p>
             self.schema = json.load(fid)
         jsonschema.validate(self.config, self.schema)
 
-    def get_value(self, path: str) -&gt; Any:
+    def get_value(self, path: str, use_list: Optional[bool] = None) -&gt; Any:
         &#34;&#34;&#34;Return value from json config file using JSON path.
 
         Arguments:
@@ -528,7 +533,12 @@ or use <code>get_config</code> static method.</p>
         &#34;&#34;&#34;
         expr = jsonpath(path).find(self.config)
         if not expr:
-            return None
+            return [] if use_list else None
+        if use_list:
+            return [e.value for e in expr]
+        elif use_list == False:
+            return expr[0].value
+        # Guess whether to return list or not by default
         if len(expr) == 1:
             return expr[0].value
         else:
@@ -537,9 +547,9 @@ or use <code>get_config</code> static method.</p>
     @classmethod
     def get_config_path(cls) -&gt; str:
         &#34;&#34;&#34;Config files are sought in following order:
-        
+
         1. `env_location` environmental variable specifying path to config file
-        
+
         2. `config_file_names` in current working directory
         &#34;&#34;&#34;
         if (config_path := os.getenv(cls.env_location, None)) :
@@ -640,9 +650,9 @@ def get_config(cls) -&gt; &#34;ConfigProxy&#34;:
 <pre><code class="python">@classmethod
 def get_config_path(cls) -&gt; str:
     &#34;&#34;&#34;Config files are sought in following order:
-    
+
     1. `env_location` environmental variable specifying path to config file
-    
+
     2. `config_file_names` in current working directory
     &#34;&#34;&#34;
     if (config_path := os.getenv(cls.env_location, None)) :
@@ -686,7 +696,7 @@ def reload(cls) -&gt; &#34;ConfigProxy&#34;:
 <h3>Methods</h3>
 <dl>
 <dt id="config_proxy.ConfigProxy.get_value"><code class="name flex">
-<span>def <span class="ident">get_value</span></span>(<span>self, path: str) ‑> Any</span>
+<span>def <span class="ident">get_value</span></span>(<span>self, path: str, use_list: Optional[bool] = None) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return value from json config file using JSON path.</p>
@@ -696,7 +706,7 @@ def reload(cls) -&gt; &#34;ConfigProxy&#34;:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_value(self, path: str) -&gt; Any:
+<pre><code class="python">def get_value(self, path: str, use_list: Optional[bool] = None) -&gt; Any:
     &#34;&#34;&#34;Return value from json config file using JSON path.
 
     Arguments:
@@ -704,7 +714,12 @@ def reload(cls) -&gt; &#34;ConfigProxy&#34;:
     &#34;&#34;&#34;
     expr = jsonpath(path).find(self.config)
     if not expr:
-        return None
+        return [] if use_list else None
+    if use_list:
+        return [e.value for e in expr]
+    elif use_list == False:
+        return expr[0].value
+    # Guess whether to return list or not by default
     if len(expr) == 1:
         return expr[0].value
     else:
@@ -728,7 +743,7 @@ def reload(cls) -&gt; &#34;ConfigProxy&#34;:
 
     @property
     def value(self) -&gt; Optional[int]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=False)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -760,7 +775,7 @@ def reload(cls) -&gt; &#34;ConfigProxy&#34;:
 </summary>
 <pre><code class="python">@property
 def value(self) -&gt; Optional[int]:
-    return self.get_value()</code></pre>
+    return self.get_value(use_list=False)</code></pre>
 </details>
 </dd>
 </dl>
@@ -780,7 +795,7 @@ def value(self) -&gt; Optional[int]:
 
     @property
     def value(self) -&gt; List[int]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=True)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -812,7 +827,7 @@ def value(self) -&gt; Optional[int]:
 </summary>
 <pre><code class="python">@property
 def value(self) -&gt; List[int]:
-    return self.get_value()</code></pre>
+    return self.get_value(use_list=True)</code></pre>
 </details>
 </dd>
 </dl>
@@ -832,7 +847,7 @@ def value(self) -&gt; List[int]:
 
     @property
     def value(self) -&gt; List[List]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=True)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -864,7 +879,7 @@ def value(self) -&gt; List[int]:
 </summary>
 <pre><code class="python">@property
 def value(self) -&gt; List[List]:
-    return self.get_value()</code></pre>
+    return self.get_value(use_list=True)</code></pre>
 </details>
 </dd>
 </dl>
@@ -884,7 +899,7 @@ def value(self) -&gt; List[List]:
 
     @property
     def value(self) -&gt; List[Dict]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=True)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -916,7 +931,7 @@ def value(self) -&gt; List[List]:
 </summary>
 <pre><code class="python">@property
 def value(self) -&gt; List[Dict]:
-    return self.get_value()</code></pre>
+    return self.get_value(use_list=True)</code></pre>
 </details>
 </dd>
 </dl>
@@ -936,7 +951,7 @@ def value(self) -&gt; List[Dict]:
 
     @property
     def value(self) -&gt; List[str]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=True)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -968,7 +983,7 @@ def value(self) -&gt; List[Dict]:
 </summary>
 <pre><code class="python">@property
 def value(self) -&gt; List[str]:
-    return self.get_value()</code></pre>
+    return self.get_value(use_list=True)</code></pre>
 </details>
 </dd>
 </dl>
@@ -988,7 +1003,7 @@ def value(self) -&gt; List[str]:
 
     @property
     def value(self) -&gt; Optional[str]:
-        return self.get_value()</code></pre>
+        return self.get_value(use_list=False)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1020,7 +1035,7 @@ def value(self) -&gt; List[str]:
 </summary>
 <pre><code class="python">@property
 def value(self) -&gt; Optional[str]:
-    return self.get_value()</code></pre>
+    return self.get_value(use_list=False)</code></pre>
 </details>
 </dd>
 </dl>

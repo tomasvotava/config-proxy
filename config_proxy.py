@@ -70,7 +70,7 @@ class ConfigProxy:
             self.schema = json.load(fid)
         jsonschema.validate(self.config, self.schema)
 
-    def get_value(self, path: str) -> Any:
+    def get_value(self, path: str, use_list: Optional[bool] = None) -> Any:
         """Return value from json config file using JSON path.
 
         Arguments:
@@ -78,7 +78,12 @@ class ConfigProxy:
         """
         expr = jsonpath(path).find(self.config)
         if not expr:
-            return None
+            return [] if use_list else None
+        if use_list:
+            return [e.value for e in expr]
+        elif use_list == False:
+            return expr[0].value
+        # Guess whether to return list or not by default
         if len(expr) == 1:
             return expr[0].value
         else:
@@ -87,9 +92,9 @@ class ConfigProxy:
     @classmethod
     def get_config_path(cls) -> str:
         """Config files are sought in following order:
-        
+
         1. `env_location` environmental variable specifying path to config file
-        
+
         2. `config_file_names` in current working directory
         """
         if (config_path := os.getenv(cls.env_location, None)) :
@@ -183,11 +188,11 @@ class ConfigProperty:
         self.default = default
         self.ProxyType = proxy
 
-    def get_value(self) -> Any:
+    def get_value(self, use_list: Optional[bool] = None) -> Any:
         if self.env and (value := os.getenv(self.env, None)):
             return value
         config = self.ProxyType.get_config()
-        if self.path and (value := config.get_value(self.path)):
+        if self.path and (value := config.get_value(self.path, use_list=use_list)):
             return value
         if self.default is not None:
             return self.default
@@ -199,7 +204,7 @@ class StringProperty(ConfigProperty):
 
     @property
     def value(self) -> Optional[str]:
-        return self.get_value()
+        return self.get_value(use_list=False)
 
 
 class IntProperty(ConfigProperty):
@@ -207,7 +212,7 @@ class IntProperty(ConfigProperty):
 
     @property
     def value(self) -> Optional[int]:
-        return self.get_value()
+        return self.get_value(use_list=False)
 
 
 class ListOfIntsProperty(ConfigProperty):
@@ -215,7 +220,7 @@ class ListOfIntsProperty(ConfigProperty):
 
     @property
     def value(self) -> List[int]:
-        return self.get_value()
+        return self.get_value(use_list=True)
 
 
 class ListOfStringsProperty(ConfigProperty):
@@ -223,7 +228,7 @@ class ListOfStringsProperty(ConfigProperty):
 
     @property
     def value(self) -> List[str]:
-        return self.get_value()
+        return self.get_value(use_list=True)
 
 
 class ListOfObjectsProperty(ConfigProperty):
@@ -231,7 +236,7 @@ class ListOfObjectsProperty(ConfigProperty):
 
     @property
     def value(self) -> List[Dict]:
-        return self.get_value()
+        return self.get_value(use_list=True)
 
 
 class ListOfListsProperty(ConfigProperty):
@@ -239,4 +244,4 @@ class ListOfListsProperty(ConfigProperty):
 
     @property
     def value(self) -> List[List]:
-        return self.get_value()
+        return self.get_value(use_list=True)
