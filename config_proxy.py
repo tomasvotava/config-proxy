@@ -188,7 +188,7 @@ class ConfigProperty:
         self.default = default
         self.ProxyType = proxy
 
-    def get_value(self, use_list: Optional[bool] = None) -> Any:
+    def get_value(self, use_list: Optional[bool] = None, forced: Optional[bool] = None) -> Any:
         if self.env and (value := os.getenv(self.env, None)):
             return value
         config = self.ProxyType.get_config()
@@ -196,7 +196,19 @@ class ConfigProperty:
             return value
         if self.default is not None:
             return self.default
-        return None
+        if forced:
+            raise ValueError(f"Property {self.env} / {self.path} has no value")
+        return [] if use_list else None
+
+    @property
+    def value(self) -> Optional[str]:
+        """Returns value found either in env, config file or default"""
+        return self.get_value()
+
+    @property
+    def fvalue(self) -> str:
+        """Returns value. If the value is not present in either env or config file, ValueError is raised."""
+        return self.get_value(forced=True)
 
 
 class StringProperty(ConfigProperty):
@@ -206,6 +218,10 @@ class StringProperty(ConfigProperty):
     def value(self) -> Optional[str]:
         return self.get_value(use_list=False)
 
+    @property
+    def fvalue(self) -> str:
+        return self.get_value(use_list=False, forced=True)
+
 
 class IntProperty(ConfigProperty):
     """See `ConfigProperty` for more."""
@@ -213,6 +229,10 @@ class IntProperty(ConfigProperty):
     @property
     def value(self) -> Optional[int]:
         return self.get_value(use_list=False)
+
+    @property
+    def fvalue(self) -> int:
+        return self.get_value(use_list=False, forced=True)
 
 
 class ListOfIntsProperty(ConfigProperty):
