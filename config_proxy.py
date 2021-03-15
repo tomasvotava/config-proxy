@@ -43,8 +43,9 @@ class ConfigProxy:
     env_location: str = "CONFIG_PATH"
     config_file_names: List[str] = ["config.json"]
     current_config: Optional["ConfigProxy"] = None
+    strict: bool = True
 
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: Optional[str]):
         """Class constructor. You are not supposed to actually create
         an instance of this class, instead you should use *Property classes
         or use `get_config` static method.
@@ -56,6 +57,12 @@ class ConfigProxy:
             FileNotFoundError: Specified configuration file was not found.
         """
         self.config_path = config_path
+        if self.config_path is None:
+            if not self.strict:
+                self.config = {}
+                self.schema = {}
+                return
+            raise FileNotFoundError("Config file was not found")
         if not os.path.exists(self.config_path):
             raise FileNotFoundError(f"Configuration file not found in {self.config_path}")
         main_dirname = os.path.abspath(os.path.dirname(__file__))
@@ -122,7 +129,12 @@ class ConfigProxy:
         """
         if cls.current_config:
             return cls.current_config
-        config_path = cls.get_config_path()
+        try:
+            config_path = cls.get_config_path()
+        except FileNotFoundError as error:
+            if cls.strict:
+                raise error
+            config_path = None
         cls.current_config = cls(config_path)
         return cls.current_config
 
